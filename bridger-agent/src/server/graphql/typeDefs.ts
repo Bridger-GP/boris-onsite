@@ -23,6 +23,9 @@ export const typeDefs = /* GraphQL */ `
       first: Int
       after: String
     ): TransactionPage!
+
+    "One transaction by ID, or null if it doesn't exist."
+    transaction(id: ID!): Transaction
   }
 
   """

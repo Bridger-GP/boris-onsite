@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { Confidence } from "@/client/transactions/apiTypes";
+import { useBulkApproveTransactions } from "@/client/transactions/hooks/useBulkApproveTransactions";
 import { useRowSelection } from "@/client/transactions/hooks/useRowSelection";
 import { useTransactionDialog } from "@/client/transactions/hooks/useTransactionDialog";
 import { useTransactionList } from "@/client/transactions/hooks/useTransactionList";
 import { toTransactionRow } from "@/client/transactions/toTransactionRow";
-import { TransactionState } from "@/server/modules/transactions/transactionState";
+import type { ReferenceData } from "@/client/transactions/types";
 import { BulkActionBar } from "@/components/BulkActionBar/BulkActionBar";
+import { BulkApproveError } from "@/components/BulkApproveError/BulkApproveError";
 import { LoadMoreFooter } from "@/components/LoadMoreFooter/LoadMoreFooter";
 import { StatusMessage } from "@/components/StatusMessage/StatusMessage";
 import { TransactionDialogs } from "@/components/TransactionDialogs/TransactionDialogs";
@@ -18,8 +20,7 @@ const BATCH_SIZE = 25;
 type AccountTransactionListProps = {
   accountId: string;
   confidence: Confidence;
-  categoryNamesById: Map<string, string>;
-  payeeNamesById: Map<string, string>;
+  referenceData: ReferenceData;
   // Enables row checkboxes and the bulk-approve toolbar.
   enableBulkSelection: boolean;
 };
@@ -28,32 +29,40 @@ type AccountTransactionListProps = {
 export function AccountTransactionList({
   accountId,
   confidence,
-  categoryNamesById,
-  payeeNamesById,
+  referenceData,
   enableBulkSelection,
 }: AccountTransactionListProps) {
   const list = useTransactionList({ accountId, confidence, batchSize: BATCH_SIZE });
   const selection = useRowSelection();
   const { dialog, openEdit, openPair, close } = useTransactionDialog();
 
-  // IDs approved in this session. Stand-in for a bulk-approve mutation, which doesn't exist yet.
-  const [approvedIds, setApprovedIds] = useState<Set<string>>(new Set());
+  const bulkApprove = useBulkApproveTransactions();
 
-  // Map API rows to table rows, showing locally approved ones as REVIEWED.
   const rows = useMemo(() => {
-    return list.transactions.map((transaction) => {
-      const row = toTransactionRow(transaction, categoryNamesById, payeeNamesById);
-      if (approvedIds.has(row.id)) {
-        return { ...row, state: TransactionState.REVIEWED };
-      }
-      return row;
-    });
-  }, [list.transactions, categoryNamesById, payeeNamesById, approvedIds]);
+    return list.transactions.map((transaction) => toTransactionRow(transaction, referenceData));
+  }, [list.transactions, referenceData]);
 
-  function approveSelected() {
-    setApprovedIds((previous) => new Set([...previous, ...selection.selectedIds]));
-    selection.clear();
+  // Approves the selected rows. On failure nothing is approved, so keep the selection
+  // to let the user deselect the problem rows and try again.
+  async function approveSelected() {
+    const succeeded = await bulkApprove.approve([...selection.selectedIds]);
+    if (succeeded) {
+      selection.clear();
+    }
   }
+
+  // Show the dialog the live row from the list (not the snapshot taken when it opened),
+  // so changes saved from inside the dialog, like a new split, are reflected immediately.
+  const liveDialog = dialog && {
+    ...dialog,
+    transaction: rows.find((row) => row.id === dialog.transaction.id) ?? dialog.transaction,
+  };
+
+  // Label each failure with the row's external ID, which is what the user sees in the table.
+  const approveErrorItems = bulkApprove.failures.map((failure) => {
+    const row = rows.find((candidate) => candidate.id === failure.transactionId);
+    return { label: row?.externalId ?? failure.transactionId, message: failure.message };
+  });
 
   if (list.loading) {
     return <StatusMessage>Loading transactions…</StatusMessage>;
@@ -82,16 +91,25 @@ export function AccountTransactionList({
         <div className="absolute bottom-[calc(100%+1.5rem)] right-0">
           <BulkActionBar
             selectedCount={selection.selectedIds.size}
+            approving={bulkApprove.approving}
             onApprove={approveSelected}
             onClear={selection.clear}
           />
         </div>
+      )}
+      {bulkApprove.error && (
+        <BulkApproveError
+          message={bulkApprove.error.message}
+          items={approveErrorItems}
+          onDismiss={bulkApprove.dismissError}
+        />
       )}
       <TransactionTable
         transactions={rows}
         selection={tableSelection}
         onEdit={openEdit}
         onPair={openPair}
+        referenceData={referenceData}
       />
       <LoadMoreFooter
         loadedCount={rows.length}
@@ -100,7 +118,7 @@ export function AccountTransactionList({
         loadingMore={list.loadingMore}
         onLoadMore={list.loadMore}
       />
-      <TransactionDialogs dialog={dialog} onClose={close} />
+      <TransactionDialogs dialog={liveDialog} referenceData={referenceData} onClose={close} />
     </div>
   );
 }

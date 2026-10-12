@@ -6,10 +6,17 @@ type ModalProps = {
   children: ReactNode;
   // Buttons rendered right-aligned at the bottom of the dialog.
   footer?: ReactNode;
+  // "md" for simple dialogs, "lg" for ones with wider content such as tables.
+  size?: "md" | "lg";
+};
+
+const SIZE_CLASSES = {
+  md: "max-w-lg",
+  lg: "max-w-3xl",
 };
 
 // Generic modal shell: dimmed backdrop, centered panel, closes on Escape or backdrop click.
-export function Modal({ title, onClose, children, footer }: ModalProps) {
+export function Modal({ title, onClose, children, footer, size = "md" }: ModalProps) {
   // Close on Escape while the modal is mounted.
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -30,14 +37,15 @@ export function Modal({ title, onClose, children, footer }: ModalProps) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="w-full max-w-lg rounded-lg bg-white shadow-xl dark:bg-gray-900"
+        className={`flex max-h-[90vh] w-full flex-col rounded-lg bg-white shadow-xl dark:bg-gray-900 ${SIZE_CLASSES[size]}`}
         // Stop clicks inside the panel from reaching the backdrop's close handler.
         onClick={(event) => event.stopPropagation()}
       >
         <h2 className="border-b border-gray-200 px-5 py-3 text-lg font-semibold dark:border-gray-800">
           {title}
         </h2>
-        <div className="px-5 py-4 text-sm">{children}</div>
+        {/* The body scrolls so tall content (e.g. a long split table) keeps the footer on screen. */}
+        <div className="overflow-y-auto px-5 py-4 text-sm">{children}</div>
         {footer && (
           <div className="flex justify-end gap-2 border-t border-gray-200 px-5 py-3 dark:border-gray-800">
             {footer}

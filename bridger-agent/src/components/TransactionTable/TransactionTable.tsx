@@ -1,4 +1,4 @@
-import type { TransactionRow } from "@/client/transactions/types";
+import type { ReferenceData, TransactionRow } from "@/client/transactions/types";
 import { SelectionCheckbox } from "@/components/SelectionCheckbox/SelectionCheckbox";
 import { TransactionTableRow } from "@/components/TransactionTableRow/TransactionTableRow";
 
@@ -15,7 +15,12 @@ type TransactionTableProps = {
   selection?: TransactionTableSelection;
   onEdit: (transaction: TransactionRow) => void;
   onPair: (transaction: TransactionRow) => void;
+  // Names for the expandable pair/split details.
+  referenceData: ReferenceData;
 };
+
+// External ID, Date, Amount, Description, State, Category, Payee, Actions, details toggle.
+const DATA_COLUMN_COUNT = 9;
 
 const HEADER_CELL_CLASSES =
   "px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-500";
@@ -26,7 +31,11 @@ export function TransactionTable({
   selection,
   onEdit,
   onPair,
+  referenceData,
 }: TransactionTableProps) {
+  // The selection checkbox adds a column; the details sub-row must span all of them.
+  const columnCount = selection ? DATA_COLUMN_COUNT + 1 : DATA_COLUMN_COUNT;
+
   // Work out the header checkbox state from the loaded rows.
   const rowIds = transactions.map((transaction) => transaction.id);
   const selectedCount = selection
@@ -59,8 +68,8 @@ export function TransactionTable({
             <th className={HEADER_CELL_CLASSES}>State</th>
             <th className={HEADER_CELL_CLASSES}>Category</th>
             <th className={HEADER_CELL_CLASSES}>Payee</th>
-            <th className={HEADER_CELL_CLASSES}>Paired</th>
             <th className={`${HEADER_CELL_CLASSES} text-right`}>Actions</th>
+            <th className="w-10" aria-label="Details" />
           </tr>
         </thead>
         <tbody>
@@ -76,6 +85,8 @@ export function TransactionTable({
               }
               onEdit={onEdit}
               onPair={onPair}
+              referenceData={referenceData}
+              columnCount={columnCount}
             />
           ))}
         </tbody>

@@ -8,7 +8,8 @@ import { TRANSACTIONS_PAGE } from "../transactions.api";
 
 type UseTransactionListOptions = {
   accountId: string;
-  confidence: Confidence;
+  // Omit to list every transaction in the account regardless of confidence.
+  confidence?: Confidence;
   // How many transactions to fetch per request ("load more" batch size).
   batchSize: number;
 };

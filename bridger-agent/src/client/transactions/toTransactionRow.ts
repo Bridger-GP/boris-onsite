@@ -1,27 +1,32 @@
 import type { ApiTransaction } from "./apiTypes";
-import type { TransactionRow } from "./types";
+import type { ReferenceData, TransactionRow } from "./types";
 
 // Converts an API transaction into the table's view model, resolving category/payee IDs to names.
 export function toTransactionRow(
   transaction: ApiTransaction,
-  categoryNamesById: Map<string, string>,
-  payeeNamesById: Map<string, string>,
+  referenceData: ReferenceData,
 ): TransactionRow {
   return {
     id: transaction.id,
+    accountId: transaction.accountId,
     externalId: transaction.externalId,
     date: transaction.date,
     amountCents: transaction.amountCents,
     description: transaction.description,
     state: transaction.state,
-    categoryName: lookupName(categoryNamesById, transaction.categoryId),
-    payeeName: lookupName(payeeNamesById, transaction.payeeId),
+    categoryId: transaction.categoryId,
+    categoryName: lookupName(referenceData.categoryNamesById, transaction.categoryId),
+    payeeId: transaction.payeeId,
+    payeeName: lookupName(referenceData.payeeNamesById, transaction.payeeId),
     isPaired: transaction.pairTransactionId !== null,
+    pairTransactionId: transaction.pairTransactionId,
+    isSplit: transaction.splits.length > 0,
+    splits: transaction.splits,
   };
 }
 
 // Returns the name for an optional ID, or null if the ID is missing or unknown.
-function lookupName(namesById: Map<string, string>, id: string | null): string | null {
+export function lookupName(namesById: Map<string, string>, id: string | null): string | null {
   if (id === null) {
     return null;
   }

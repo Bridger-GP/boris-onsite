@@ -1,10 +1,7 @@
-import { formatAmount, formatDate } from "@/client/transactions/format";
-import type { TransactionRow } from "@/client/transactions/types";
-import { OptionalText } from "@/components/OptionalText/OptionalText";
-import { PairedIndicator } from "@/components/PairedIndicator/PairedIndicator";
-import { RowActions } from "@/components/RowActions/RowActions";
-import { SelectionCheckbox } from "@/components/SelectionCheckbox/SelectionCheckbox";
-import { TransactionStateBadge } from "@/components/TransactionStateBadge/TransactionStateBadge";
+import { useState } from "react";
+import type { ReferenceData, TransactionRow } from "@/client/transactions/types";
+import { TransactionDetailsSubRow } from "@/components/TransactionDetailsSubRow/TransactionDetailsSubRow";
+import { TransactionMainRow } from "@/components/TransactionMainRow/TransactionMainRow";
 
 type TransactionTableRowProps = {
   transaction: TransactionRow;
@@ -15,63 +12,44 @@ type TransactionTableRowProps = {
   };
   onEdit: (transaction: TransactionRow) => void;
   onPair: (transaction: TransactionRow) => void;
+  // Used by the details sub-row to show account, category and payee names.
+  referenceData: ReferenceData;
+  // Total columns in the table, so the details sub-row can span all of them.
+  columnCount: number;
 };
 
-const CELL_CLASSES = "px-3 py-2 align-middle";
-
-// A single transaction row in the review table.
+// A single transaction in the review table. Paired or split transactions get a toggle
+// that shows a details sub-row underneath (the paired transaction, or the split lines).
 export function TransactionTableRow({
   transaction,
   selection,
   onEdit,
   onPair,
+  referenceData,
+  columnCount,
 }: TransactionTableRowProps) {
-  const isNegative = transaction.amountCents < 0;
-  const amountClasses = isNegative ? "text-red-600" : "text-gray-900 dark:text-gray-100";
-  const rowClasses = selection?.isSelected
-    ? "bg-blue-50 dark:bg-blue-950"
-    : "hover:bg-gray-50 dark:hover:bg-gray-900";
+  // Purely visual, so it lives here; rows are keyed by ID, so it survives "load more".
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const hasDetails = transaction.isPaired || transaction.isSplit;
+  const detailsLabel = transaction.isPaired ? "paired transaction" : "split details";
 
   return (
-    <tr className={`border-b border-gray-100 dark:border-gray-800 ${rowClasses}`}>
-      {selection && (
-        <td className={CELL_CLASSES}>
-          <SelectionCheckbox
-            checked={selection.isSelected}
-            onChange={selection.onToggle}
-            ariaLabel={`Select transaction ${transaction.externalId}`}
-          />
-        </td>
+    <>
+      <TransactionMainRow
+        transaction={transaction}
+        selection={selection}
+        onEdit={onEdit}
+        onPair={onPair}
+        hasDetails={hasDetails}
+        detailsLabel={detailsLabel}
+        isExpanded={isExpanded}
+        onToggleExpanded={() => setIsExpanded((previous) => !previous)}
+      />
+      {/* Re-checks hasDetails so the sub-row disappears if, say, the transaction is unpaired while expanded. */}
+      {isExpanded && hasDetails && (
+        <TransactionDetailsSubRow transaction={transaction} referenceData={referenceData} columnCount={columnCount} />
       )}
-      <td className={`${CELL_CLASSES} font-mono text-xs text-gray-600 dark:text-gray-400`}>
-        {transaction.externalId}
-      </td>
-      <td className={`${CELL_CLASSES} whitespace-nowrap`}>
-        {formatDate(transaction.date)}
-      </td>
-      <td className={`${CELL_CLASSES} whitespace-nowrap text-right tabular-nums ${amountClasses}`}>
-        {formatAmount(transaction.amountCents)}
-      </td>
-      <td className={CELL_CLASSES}>{transaction.description}</td>
-      <td className={CELL_CLASSES}>
-        <TransactionStateBadge state={transaction.state} />
-      </td>
-      <td className={CELL_CLASSES}>
-        <OptionalText value={transaction.categoryName} />
-      </td>
-      <td className={CELL_CLASSES}>
-        <OptionalText value={transaction.payeeName} />
-      </td>
-      <td className={CELL_CLASSES}>
-        <PairedIndicator isPaired={transaction.isPaired} />
-      </td>
-      <td className={CELL_CLASSES}>
-        <RowActions
-          isPaired={transaction.isPaired}
-          onEdit={() => onEdit(transaction)}
-          onPair={() => onPair(transaction)}
-        />
-      </td>
-    </tr>
+    </>
   );
 }

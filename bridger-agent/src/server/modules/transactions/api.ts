@@ -125,3 +125,19 @@ export const transactions = async (
     totalCount,
   };
 };
+
+type TransactionArgs = {
+  id: string;
+};
+
+// Returns one transaction (with its splits) by ID, or null if it doesn't exist.
+export const transaction = async (_parent: unknown, args: TransactionArgs) => {
+  const row = await prisma.transaction.findUnique({
+    where: { id: args.id },
+    include: { splits: { orderBy: { id: "asc" } } },
+  });
+  if (row === null) {
+    return null;
+  }
+  return toGraphQLTransaction(row);
+};
