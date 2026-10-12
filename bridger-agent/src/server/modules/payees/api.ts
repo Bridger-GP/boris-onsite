@@ -8,7 +8,7 @@ type PayeesArgs = {
 export const payees = async (_parent: unknown, args: PayeesArgs) => {
   return prisma.payee.findMany({
     where: { clientId: args.clientId },
-    select: { id: true, name: true },
+    select: { id: true, name: true, reviewed: true },
     orderBy: { name: "asc" },
   });
 };

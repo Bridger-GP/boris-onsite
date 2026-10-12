@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/db";
+import { WriteErrorCode, writeError } from "@/server/graphql/errors";
 import { GraphQLError } from "graphql";
 import { toGraphQLTransaction } from "./api";
 import {
   DbTransaction,
   TransactionForWrite,
-  WriteErrorCode,
   assertCategoryBelongsToClient,
   assertEditableState,
   assertNotPaired,
@@ -12,7 +12,6 @@ import {
   assertPayeeBelongsToClient,
   assertReadyToSubmit,
   loadTransactionForWrite,
-  writeError,
 } from "./transactionRules";
 import { TransactionState } from "./transactionState";
 

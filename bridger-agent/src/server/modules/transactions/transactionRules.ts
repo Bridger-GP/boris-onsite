@@ -1,5 +1,5 @@
+import { WriteErrorCode, writeError } from "@/server/graphql/errors";
 import { Prisma } from "@prisma/client";
-import { GraphQLError } from "graphql";
 import { TransactionState } from "./transactionState";
 
 // A Prisma client scoped to an interactive transaction (what `prisma.$transaction` passes in).
@@ -15,20 +15,6 @@ const EDITABLE_STATES: string[] = [
   TransactionState.READY_FOR_REVIEW,
   TransactionState.PROBLEM,
 ];
-
-// Error codes returned in `extensions.code` so the UI can tell failures apart.
-export const WriteErrorCode = {
-  NOT_FOUND: "NOT_FOUND",
-  INVALID_STATE: "INVALID_STATE",
-  INVALID_INPUT: "INVALID_INPUT",
-} as const;
-
-type WriteErrorCode = (typeof WriteErrorCode)[keyof typeof WriteErrorCode];
-
-// Builds a GraphQL error that is shown to the client (not masked) with a stable code.
-export function writeError(code: WriteErrorCode, message: string): GraphQLError {
-  return new GraphQLError(message, { extensions: { code } });
-}
 
 // Loads a transaction with its account and splits, throwing NOT_FOUND if it doesn't exist.
 export async function loadTransactionForWrite(

@@ -59,6 +59,15 @@ export const typeDefs = /* GraphQL */ `
 
     "Removes all splits from a transaction. Does not change state."
     unsplitTransaction(transactionId: ID!): Transaction!
+
+    """
+    Creates an unreviewed payee for a client. The name is trimmed and must be
+    unique (case-sensitive) within the client.
+    """
+    createPayee(clientId: ID!, name: String!): Payee!
+
+    "Marks a payee as reviewed. No-op if it already is."
+    reviewPayee(payeeId: ID!): Payee!
   }
 
   input SplitInput {
@@ -81,6 +90,8 @@ export const typeDefs = /* GraphQL */ `
   type Payee {
     id: ID!
     name: String!
+    "Whether a human has confirmed this payee."
+    reviewed: Boolean!
   }
 
   enum Confidence {

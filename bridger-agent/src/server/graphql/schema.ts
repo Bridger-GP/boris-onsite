@@ -2,6 +2,7 @@ import { accounts } from "@/server/modules/accounts/api";
 import { categories } from "@/server/modules/categories/api";
 import { greetings } from "@/server/modules/greet/api";
 import { payees } from "@/server/modules/payees/api";
+import { createPayee, reviewPayee } from "@/server/modules/payees/mutations";
 import { transactions } from "@/server/modules/transactions/api";
 import {
   bulkApproveTransactions,
@@ -32,6 +33,8 @@ export const schema = createSchema({
       unpairTransactions,
       splitTransaction,
       unsplitTransaction,
+      createPayee,
+      reviewPayee,
     },
   },
 });
