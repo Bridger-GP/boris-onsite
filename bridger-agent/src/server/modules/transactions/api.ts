@@ -18,7 +18,7 @@ type TransactionsArgs = {
   after?: string | null;
 };
 
-type TransactionWithSplits = Transaction & { splits: SplitTransaction[] };
+export type TransactionWithSplits = Transaction & { splits: SplitTransaction[] };
 
 // Validates the requested page size, falling back to the default and capping at the max.
 function resolvePageSize(first: number | null | undefined): number {
@@ -51,7 +51,7 @@ function formatCalendarDate(date: Date): string {
 }
 
 // Converts a DB row into the shape of the GraphQL `Transaction` type.
-function toGraphQLTransaction(transaction: TransactionWithSplits) {
+export function toGraphQLTransaction(transaction: TransactionWithSplits) {
   let confidence: Confidence = "LOW";
   if (transaction.isHighConfidence) {
     confidence = "HIGH";
