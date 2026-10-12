@@ -6,6 +6,10 @@ We're building a prototype of a transaction categorization system.
 
 The main parts we need to build are data storage for various transaction information, and a UX that allows users to review and modify it.
 
+## Potential TODOs
+
+- Recurring transactions - how to detect, how to handle (auto-approve? allow bulk approval without selecting manually?)
+
 ## Repo layout
 
 - `bridger-agent/`: Next.js app (GraphQL backend, database, UI)
