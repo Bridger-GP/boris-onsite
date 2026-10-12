@@ -7,6 +7,106 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model Greet {
-  id Int @id @default(autoincrement())
+// A bookkeeping client (one legal entity). Owns its accounts, categories and payees.
+model Client {
+  id   String @id @default(cuid())
+  name String
+
+  accounts   Account[]
+  categories Category[]
+  payees     Payee[]
+}
+
+// A bank / card account belonging to a client. Transactions are ingested per account.
+model Account {
+  id       String @id @default(cuid())
+  clientId String
+  name     String
+
+  client       Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@unique([clientId, name])
+}
+
+// A single bank-feed transaction and its categorization state.
+model Transaction {
+  id          String   @id @default(cuid())
+  accountId   String
+  // ID from the external bank feed; unique per account so re-ingesting is idempotent.
+  externalId  String
+  // Signed amount in cents (negative = money out). Prisma Int is 32-bit: max ~$21.4M.
+  amountCents Int
+  // Calendar date of the transaction, stored as midnight UTC.
+  date        DateTime
+  description String
+
+  // One of TransactionState (INGESTED, READY_FOR_REVIEW, PROBLEM, REVIEWED, WRITTEN, IGNORED).
+  // Stored as a plain string; the enum lives in the app layer.
+  state String @default("INGESTED")
+
+  categoryId          String?
+  payeeId             String?
+  // true = high confidence, false = low confidence in the suggested category/payee.
+  isHighConfidence    Boolean @default(false)
+  needsClientFeedback Boolean @default(false)
+
+  // The other side of a transfer (e.g. checking -> credit card payment).
+  // Set on both transactions so the pair can be read from either side.
+  pairTransactionId String? @unique
+
+  account         Account            @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category        Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  payee           Payee?             @relation(fields: [payeeId], references: [id], onDelete: SetNull)
+  pairTransaction Transaction?       @relation("TransactionPair", fields: [pairTransactionId], references: [id], onDelete: SetNull)
+  pairedFrom      Transaction?       @relation("TransactionPair")
+  splits          SplitTransaction[]
+
+  @@unique([accountId, externalId])
+  @@index([accountId, state])
+  @@index([categoryId])
+  @@index([payeeId])
+}
+
+// One line of a transaction that has been split across multiple categories/payees.
+// The app layer is responsible for ensuring splits sum to the parent's amountCents.
+model SplitTransaction {
+  id            String  @id @default(cuid())
+  transactionId String
+  categoryId    String?
+  payeeId       String?
+  amountCents   Int
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  category    Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  payee       Payee?      @relation(fields: [payeeId], references: [id], onDelete: SetNull)
+
+  @@index([transactionId])
+}
+
+// A client-specific category (chart-of-accounts line) a transaction can be assigned to.
+model Category {
+  id       String @id @default(cuid())
+  clientId String
+  name     String
+
+  client            Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  transactions      Transaction[]
+  splitTransactions SplitTransaction[]
+
+  @@unique([clientId, name])
+}
+
+// A client-specific payee (vendor / customer). `reviewed` marks payees a human has confirmed.
+model Payee {
+  id       String  @id @default(cuid())
+  clientId String
+  name     String
+  reviewed Boolean @default(false)
+
+  client            Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  transactions      Transaction[]
+  splitTransactions SplitTransaction[]
+
+  @@unique([clientId, name])
 }
