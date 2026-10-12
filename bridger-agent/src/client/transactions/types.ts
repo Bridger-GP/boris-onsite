@@ -5,7 +5,7 @@ import type { TransactionState } from "@/server/modules/transactions/transaction
 export type TransactionRow = {
   id: string;
   externalId: string;
-  // ISO date string (midnight UTC), e.g. "2026-09-14T00:00:00.000Z".
+  // Calendar date, "YYYY-MM-DD" (as returned by the API).
   date: string;
   // Signed amount in cents (negative = money out).
   amountCents: number;

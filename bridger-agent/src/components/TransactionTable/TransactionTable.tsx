@@ -5,13 +5,13 @@ import { TransactionTableRow } from "@/components/TransactionTableRow/Transactio
 export type TransactionTableSelection = {
   isSelected: (id: string) => boolean;
   toggleRow: (id: string) => void;
-  // Toggles every row on the current page at once.
-  togglePage: (ids: string[]) => void;
+  // Toggles every loaded row at once.
+  toggleAll: (ids: string[]) => void;
 };
 
 type TransactionTableProps = {
   transactions: TransactionRow[];
-  // When provided, the table shows a checkbox column and a "select all on page" header checkbox.
+  // When provided, the table shows a checkbox column and a "select all loaded" header checkbox.
   selection?: TransactionTableSelection;
   onEdit: (transaction: TransactionRow) => void;
   onPair: (transaction: TransactionRow) => void;
@@ -20,22 +20,22 @@ type TransactionTableProps = {
 const HEADER_CELL_CLASSES =
   "px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-500";
 
-// Table of transactions for the current page, with optional row selection.
+// Table of the loaded transactions, with optional row selection.
 export function TransactionTable({
   transactions,
   selection,
   onEdit,
   onPair,
 }: TransactionTableProps) {
-  // Work out the header checkbox state from the rows visible on this page.
-  const pageIds = transactions.map((transaction) => transaction.id);
-  const selectedOnPageCount = selection
-    ? pageIds.filter((id) => selection.isSelected(id)).length
+  // Work out the header checkbox state from the loaded rows.
+  const rowIds = transactions.map((transaction) => transaction.id);
+  const selectedCount = selection
+    ? rowIds.filter((id) => selection.isSelected(id)).length
     : 0;
-  const isWholePageSelected =
-    pageIds.length > 0 && selectedOnPageCount === pageIds.length;
-  const isPartOfPageSelected =
-    selectedOnPageCount > 0 && !isWholePageSelected;
+  const areAllSelected =
+    rowIds.length > 0 && selectedCount === rowIds.length;
+  const areSomeSelected =
+    selectedCount > 0 && !areAllSelected;
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
@@ -45,10 +45,10 @@ export function TransactionTable({
             {selection && (
               <th className={`${HEADER_CELL_CLASSES} w-10`}>
                 <SelectionCheckbox
-                  checked={isWholePageSelected}
-                  indeterminate={isPartOfPageSelected}
-                  onChange={() => selection.togglePage(pageIds)}
-                  ariaLabel="Select all transactions on this page"
+                  checked={areAllSelected}
+                  indeterminate={areSomeSelected}
+                  onChange={() => selection.toggleAll(rowIds)}
+                  ariaLabel="Select all loaded transactions"
                 />
               </th>
             )}

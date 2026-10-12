@@ -1,6 +1,6 @@
-import { MOCK_UNCATEGORIZED_TRANSACTIONS } from "@/client/transactions/mockTransactions";
 import { TransactionListView } from "@/components/TransactionListView/TransactionListView";
 
+// Low-confidence transactions that need individual review.
 export default function UncategorizedTransactionsPage() {
-  return <TransactionListView initialTransactions={MOCK_UNCATEGORIZED_TRANSACTIONS} />;
+  return <TransactionListView confidence="LOW" />;
 }
