@@ -17,8 +17,7 @@ export function ClientTransactionListView({
   confidence,
   enableBulkSelection = false,
 }: ClientTransactionListViewProps) {
-  const { accounts, categoryNamesById, payeeNamesById, loading, error } =
-    useClientReferenceData(clientId);
+  const { accounts, referenceData, loading, error } = useClientReferenceData(clientId);
   // null until the user picks an account; until then we show the first one.
   const [pickedAccountId, setPickedAccountId] = useState<string | null>(null);
 
@@ -47,8 +46,7 @@ export function ClientTransactionListView({
         key={accountId}
         accountId={accountId}
         confidence={confidence}
-        categoryNamesById={categoryNamesById}
-        payeeNamesById={payeeNamesById}
+        referenceData={referenceData}
         enableBulkSelection={enableBulkSelection}
       />
     </div>

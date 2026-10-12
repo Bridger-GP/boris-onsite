@@ -1,37 +1,30 @@
-import type { TransactionRow } from "@/client/transactions/types";
-import { Button } from "@/components/Button/Button";
-import { Modal } from "@/components/Modal/Modal";
-import { TransactionSummary } from "@/components/TransactionSummary/TransactionSummary";
+import { useState } from "react";
+import type { ReferenceData, TransactionRow } from "@/client/transactions/types";
+import { PairPickerModal } from "@/components/PairPickerModal/PairPickerModal";
+import { UnpairModal } from "@/components/UnpairModal/UnpairModal";
 
 type PairTransactionModalProps = {
   transaction: TransactionRow;
+  referenceData: ReferenceData;
   onClose: () => void;
 };
 
-// Stub dialog for pairing an unpaired transaction, or unpairing a paired one.
-export function PairTransactionModal({
-  transaction,
-  onClose,
-}: PairTransactionModalProps) {
-  const isUnpairing = transaction.isPaired;
-  const title = isUnpairing ? "Unpair transaction" : "Pair transaction";
-  const placeholder = isUnpairing
-    ? "Unpair confirmation coming soon."
-    : "Picker for the matching transaction coming soon.";
+// Opens the Unpair dialog for a paired transaction, or the pair picker for an unpaired one.
+export function PairTransactionModal({ transaction, referenceData, onClose }: PairTransactionModalProps) {
+  // Decide the mode once, when the dialog opens. The live row flips isPaired as soon as a (un)pair
+  // succeeds, and we don't want the dialog to switch modes in the moment before it closes.
+  const [pairTransactionIdAtOpen] = useState(transaction.pairTransactionId);
 
-  const footer = (
-    <>
-      <Button onClick={onClose}>Cancel</Button>
-      <Button variant="primary" onClick={onClose}>
-        {isUnpairing ? "Unpair" : "Pair"}
-      </Button>
-    </>
-  );
+  if (pairTransactionIdAtOpen !== null) {
+    return (
+      <UnpairModal
+        transaction={transaction}
+        pairTransactionId={pairTransactionIdAtOpen}
+        referenceData={referenceData}
+        onClose={onClose}
+      />
+    );
+  }
 
-  return (
-    <Modal title={title} onClose={onClose} footer={footer}>
-      <TransactionSummary transaction={transaction} />
-      <p className="mt-4 text-gray-500">{placeholder}</p>
-    </Modal>
-  );
+  return <PairPickerModal transaction={transaction} referenceData={referenceData} onClose={onClose} />;
 }

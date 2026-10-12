@@ -3,7 +3,7 @@ import { categories } from "@/server/modules/categories/api";
 import { greetings } from "@/server/modules/greet/api";
 import { payees } from "@/server/modules/payees/api";
 import { createPayee, reviewPayee } from "@/server/modules/payees/mutations";
-import { transactions } from "@/server/modules/transactions/api";
+import { transaction, transactions } from "@/server/modules/transactions/api";
 import {
   bulkApproveTransactions,
   pairTransactions,
@@ -25,6 +25,7 @@ export const schema = createSchema({
       categories,
       payees,
       transactions,
+      transaction,
     },
     Mutation: {
       bulkApproveTransactions,

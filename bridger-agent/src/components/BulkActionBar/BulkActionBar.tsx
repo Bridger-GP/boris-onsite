@@ -2,6 +2,8 @@ import { Button } from "@/components/Button/Button";
 
 type BulkActionBarProps = {
   selectedCount: number;
+  // True while the approve request is in flight.
+  approving: boolean;
   onApprove: () => void;
   onClear: () => void;
 };
@@ -9,6 +11,7 @@ type BulkActionBarProps = {
 // Toolbar for actions on the selected rows. Renders nothing when no rows are selected.
 export function BulkActionBar({
   selectedCount,
+  approving,
   onApprove,
   onClear,
 }: BulkActionBarProps) {
@@ -24,11 +27,11 @@ export function BulkActionBar({
         {selectedCount} {rowLabel} selected
       </span>
       <div className="flex gap-2">
-        <Button variant="ghost" onClick={onClear}>
+        <Button variant="ghost" disabled={approving} onClick={onClear}>
           Clear selection
         </Button>
-        <Button variant="primary" onClick={onApprove}>
-          Approve selected
+        <Button variant="primary" disabled={approving} onClick={onApprove}>
+          {approving ? "Approving…" : "Approve selected"}
         </Button>
       </div>
     </div>
